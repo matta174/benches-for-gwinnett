@@ -6,7 +6,7 @@ Every Ride Gwinnett bus stop, scored by who has to permit a bench, whether there
 
 Gwinnett runs 872 bus stops across 9 local routes. The median stop sees 28 bus trips per weekday, so a rider arriving at random waits about 15 minutes. Most of them wait standing. This repo is the evidence base for fixing that with wooden benches, following a model that worked in Chattanooga, Nashville, Berkeley, and metro Atlanta.
 
-The headline finding: **Gwinnett County DOT controls the right of way at 557 of 872 stops, and 506 of those already have a sidewalk.** One agency, one permit conversation, 58% of the system.
+The headline finding: **Gwinnett County DOT controls the right of way at 557 of 872 stops, and 506 of those already have a sidewalk.** 58% of the system.
 
 ## What is here
 
