@@ -24,20 +24,31 @@
 :root{
   --grot:'Archivo',"Helvetica Neue",Helvetica,Arial,sans-serif;
   --disp:'Anton','Archivo',Impact,"Haettenschweiler",sans-serif;
+  /* --hi is the amber FILL (chips, thumbs, focus rings). It is a surface, not text.
+     --hitext is the amber that is safe to READ on the panel. Two tokens because one
+     value cannot clear 4.5:1 as text and still punch as a fill. */
   --hi:#F2C14E;
 }
+/* Jurisdiction colours are tuned for the BASEMAP (--paper), which is the only surface
+   they are ever painted on: map dots and the legend. They are never used as text or
+   as a dot on the panel, where --county would land on its own hex. See .tag. */
 body[data-mode="day"]{
-  --paper:#EFEADF; --panel:#AF2B23; --panel2:#9C231C; --ink:#F8F2E2; --ink2:#E9C5B4;
-  --rule:#8A1D17; --sel:#7E1610; --thumbline:#5E0E0A;
-  --county:#AF2B23; --city:#2F6690; --gdot:#1B1B1B; --out:#A99C86; --unk:#6E6154;
+  --paper:#EFEADF; --paperink:#2A2620; --paperrule:#C9C2B2;
+  --panel:#AF2B23; --panel2:#9C231C; --ink:#F8F2E2; --ink2:#EFD6C8;
+  --rule:#8A1D17; --sel:#7E1610; --thumbline:#5E0E0A; --hitext:#F8D98D;
+  --county:#AF2B23; --city:#2F6690; --gdot:#1B1B1B; --out:#8A7E6B; --unk:#6E6154;
+  --boundary:#AF2B23; --cityline:#8A7E6B;
 }
 body[data-mode="night"]{
-  --paper:#14110E; --panel:#6E1410; --panel2:#5C100C; --ink:#F0E7D4; --ink2:#CBA492;
-  --rule:#4A0B08; --sel:#450A07; --thumbline:#2A0503;
+  --paper:#14110E; --paperink:#EFE7D3; --paperrule:#3A332B;
+  --panel:#6E1410; --panel2:#5C100C; --ink:#F0E7D4; --ink2:#CBA492;
+  --rule:#4A0B08; --sel:#450A07; --thumbline:#2A0503; --hitext:#F2C14E;
   --county:#E8443A; --city:#5AA9E6; --gdot:#EFE7D3; --out:#9A8B74; --unk:#B0A08C;
+  --boundary:#E8443A; --cityline:#6E6252;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--paper);color:var(--ink);font-family:var(--grot);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.vh{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--grot);height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 main{flex:1;display:flex;min-height:0}
 #mapwrap{flex:1;position:relative;background:var(--paper);min-width:0}
 #map{position:absolute;inset:0}
@@ -48,7 +59,7 @@ aside{width:400px;display:flex;flex-direction:column;background:var(--panel);col
 
 .mast{padding:14px 15px 12px;border-bottom:1px solid var(--rule);flex-shrink:0;
   display:grid;grid-template-columns:1fr auto;column-gap:10px;align-items:start}
-.mast h1{font-family:var(--disp);font-size:37px;letter-spacing:.004em;line-height:.92;text-transform:uppercase;font-weight:400}
+.mast h1{font-family:var(--disp);font-size:37px;letter-spacing:.004em;line-height:.92;text-transform:uppercase;font-weight:400;text-wrap:balance}
 .sub{font-size:10.5px;color:var(--ink2);margin-top:7px;line-height:1.6;grid-column:1/-1}
 .util{display:flex;gap:5px}
 .util button svg{width:14px;height:14px;display:block}
@@ -68,10 +79,14 @@ button.f{font-size:10px;background:transparent;border:1px solid var(--ink2);colo
   padding:3px 8px;cursor:pointer;letter-spacing:.03em;border-radius:2px;font-family:inherit}
 button.f.on{background:var(--hi);color:#3A1A06;border-color:var(--hi);font-weight:700}
 button.f:focus-visible{outline:2px solid var(--hi);outline-offset:2px}
-button.f .sw{display:inline-block;width:7px;height:7px;margin-right:5px;vertical-align:middle;border-radius:50%}
+/* The ring is currentColor so it tracks the chip's own text colour: --ink when the chip
+   is off (5.89:1 on --panel), #3A1A06 when it is on (9.41:1 on --hi). Without it the
+   county swatch is --county on --panel, which is the same hex. */
+button.f .sw{display:inline-block;width:7px;height:7px;margin-right:5px;vertical-align:middle;border-radius:50%;
+  box-shadow:0 0 0 1px currentColor}
 input[type=search]{width:100%;background:var(--panel2);border:1px solid var(--rule);color:var(--ink);padding:5px 8px;
   font-family:inherit;font-size:12px;border-radius:2px}
-input[type=search]::placeholder{color:var(--ink2);opacity:.7}
+input[type=search]::placeholder{color:var(--ink2);opacity:1}
 input[type=search]:focus-visible{outline:2px solid var(--hi);outline-offset:1px}
 .count{font-size:10.5px;color:var(--ink2);letter-spacing:.04em;font-variant-numeric:tabular-nums;font-weight:500}
 
@@ -81,23 +96,44 @@ input[type=search]:focus-visible{outline:2px solid var(--hi);outline-offset:1px}
 .dual input[type=range]{position:absolute;top:0;left:0;width:100%;height:24px;margin:0;padding:0;
   background:none;pointer-events:none;-webkit-appearance:none;appearance:none}
 .dual input[type=range]:focus{outline:none}
-.dual input[type=range]::-webkit-slider-thumb{pointer-events:auto;-webkit-appearance:none;width:14px;height:14px;
-  border-radius:50%;background:var(--hi);border:2px solid var(--thumbline);cursor:grab}
-.dual input[type=range]::-moz-range-thumb{pointer-events:auto;width:14px;height:14px;border:2px solid var(--thumbline);
-  border-radius:50%;background:var(--hi);cursor:grab}
-.dual input[type=range]:focus-visible::-webkit-slider-thumb{outline:2px solid var(--ink);outline-offset:2px}
-.ticks{display:flex;justify-content:space-between;font-size:8.5px;color:var(--ink2);opacity:.75;margin-top:-2px}
+/* The track has pointer-events:none so the thumb is the ONLY pointer target. It is
+   therefore a 24px target (WCAG 2.2 AA 2.5.8) painted to look like the 14px dot:
+   7px amber radius, 2px thumbline ring, transparent to the edge. */
+.dual input[type=range]::-webkit-slider-thumb{pointer-events:auto;-webkit-appearance:none;width:24px;height:24px;
+  border:0;border-radius:50%;background:transparent;cursor:grab;
+  background-image:radial-gradient(circle at center,var(--hi) 0 5px,var(--thumbline) 5px 7px,transparent 7px)}
+.dual input[type=range]::-moz-range-thumb{pointer-events:auto;width:24px;height:24px;border:0;
+  border-radius:50%;background:transparent;cursor:grab;
+  background-image:radial-gradient(circle at center,var(--hi) 0 5px,var(--thumbline) 5px 7px,transparent 7px)}
+.dual input[type=range]:focus-visible::-webkit-slider-thumb{outline:2px solid var(--ink);outline-offset:-1px}
+.dual input[type=range]:focus-visible::-moz-range-thumb{outline:2px solid var(--ink);outline-offset:-1px}
+.ticks{display:flex;justify-content:space-between;font-size:8.5px;color:var(--ink2);margin-top:-2px}
 
-.list{flex:1;overflow-y:auto}
-.card{padding:8px 15px;border-bottom:1px solid var(--rule);cursor:pointer}
-.card:hover{background:var(--panel2)}
+.list{flex:1;overflow-y:auto;list-style:none;margin:0;padding:0}
+/* All 872 stops are in the DOM so the list stays a true equivalent of the map. Laying
+   all of them out costs ~105ms; content-visibility:auto skips layout and paint for the
+   off-screen ones while keeping them in the a11y tree and findable by find-in-page. */
+.card{padding:8px 15px;border-bottom:1px solid var(--rule);cursor:pointer;
+  content-visibility:auto;contain-intrinsic-size:auto 62px}
+.card:hover,.card:focus-within{background:var(--panel2)}
 .card.sel{background:var(--sel);box-shadow:inset 4px 0 0 var(--hi)}
+.card.empty{cursor:default}
 .card h3{font-size:14px;font-weight:650;line-height:1.25;font-stretch:94%;letter-spacing:-.005em}
+/* The stop name is the control that selects the stop. It cannot be a <button> wrapping
+   the whole card, because the card also holds the Street View link and a button may not
+   contain a link. Name selects, link navigates: two controls, both keyboard-reachable. */
+.card h3 .pick{font:inherit;font-stretch:inherit;letter-spacing:inherit;color:inherit;background:none;
+  border:0;padding:0;margin:0;text-align:left;width:100%;cursor:pointer}
+.card h3 .pick:focus-visible{outline:2px solid var(--hi);outline-offset:2px}
 .tags{display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-top:4px;font-size:9.5px;letter-spacing:.01em;font-stretch:88%;font-weight:500;font-variant-numeric:tabular-nums}
-.tag{padding:1px 4px;border:1px solid currentColor;border-radius:2px}
+/* Jurisdiction is carried by the tag TEXT in --ink, never by the tag's colour. The
+   swatch is the accelerant and takes a currentColor ring for the same reason the
+   filter chips do. */
+.tag{padding:1px 4px;border:1px solid currentColor;border-radius:2px;display:inline-flex;align-items:center;gap:4px}
 .tag.n{color:var(--ink2);border-color:var(--ink2)}
+.tag .tsw{width:6px;height:6px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 1px currentColor}
 .meta{font-size:9.5px;color:var(--ink2);margin-top:4px;display:flex;gap:9px;align-items:baseline}
-.meta a{color:var(--hi);text-decoration:none;border-bottom:1px solid;display:inline-flex;align-items:center;gap:3px}
+.meta a{color:var(--hitext);text-decoration:none;border-bottom:1px solid;display:inline-flex;align-items:center;gap:3px}
 .arw{width:7px;height:7px;flex-shrink:0}
 
 /* sources + permits drawer */
@@ -109,25 +145,28 @@ input[type=search]:focus-visible{outline:2px solid var(--hi);outline-offset:1px}
 .dsec{font-size:9px;color:var(--ink2);letter-spacing:.1em;text-transform:uppercase;margin:15px 0 7px}
 .auth{border:1px solid var(--rule);border-radius:2px;padding:9px 10px;margin-bottom:7px;background:var(--panel2)}
 .auth .an{font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px}
-.auth .an i{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.auth .an i{width:9px;height:9px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 1px currentColor}
 .auth .an em{margin-left:auto;font-style:normal;font-size:10px;color:var(--ink2);font-weight:400}
 .auth p{font-size:10.5px;color:var(--ink2);line-height:1.55;margin-top:5px}
 .auth ul{list-style:none;margin-top:6px;display:flex;flex-direction:column;gap:3px}
 .auth li{font-size:10.5px;line-height:1.4}
-.auth a,.src a{color:var(--hi);text-decoration:none;border-bottom:1px solid;word-break:break-word}
+.auth a,.src a{color:var(--hitext);text-decoration:none;border-bottom:1px solid;word-break:break-word}
 .auth a:focus-visible,.src a:focus-visible{outline:2px solid var(--hi);outline-offset:2px}
 .src{font-size:10.5px;line-height:1.75;color:var(--ink2)}
 .src li{list-style:none;padding:5px 0;border-bottom:1px solid var(--rule)}
 .src b{color:var(--ink);font-weight:600;display:block;font-size:11px}
 .note{font-size:10px;color:var(--ink2);line-height:1.6;margin-top:12px;padding-top:10px;border-top:1px solid var(--rule)}
 
+/* The legend's whole job is mapping colour to meaning, so it must live on the same
+   ground the dots are painted on (--paper). On the panel, --county would sit on its
+   own hex and the most common category would have no legend entry at all. */
 .legend{position:absolute;left:10px;bottom:10px;z-index:400;padding:8px 10px;font-size:9.5px;
-  line-height:1.75;background:var(--panel);border:1px solid var(--rule);color:var(--ink);border-radius:2px}
+  line-height:1.75;background:var(--paper);border:1px solid var(--paperrule);color:var(--paperink);border-radius:2px}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:baseline}
 .leaflet-popup-content-wrapper{background:var(--panel);color:var(--ink);border-radius:2px;border:1px solid var(--ink);box-shadow:none}
 .leaflet-popup-tip{background:var(--panel);border:1px solid var(--ink)}
 .leaflet-popup-content{font-size:11px;line-height:1.55;margin:8px 10px;font-variant-numeric:tabular-nums}
-.leaflet-popup-content a{color:var(--hi)}
+.leaflet-popup-content a{color:var(--hitext)}
 .leaflet-popup-close-button{color:var(--ink2)!important}
 .leaflet-container{background:var(--paper);font-family:var(--grot)}
 .citytip{background:var(--panel);border:1px solid var(--rule);color:var(--ink);font-size:9px;
@@ -149,7 +188,8 @@ input[type=search]:focus-visible{outline:2px solid var(--hi);outline-offset:1px}
       <h1>A better world is possible</h1>
       <div class="util">
         <button id="modeBtn" title="Day or night" aria-label="Switch to night mode" aria-pressed="false"></button>
-        <button id="infoBtn" title="Sources and permits" aria-label="Sources and permits" aria-pressed="false">i</button>
+        <button id="infoBtn" title="Sources and permits" aria-label="Sources and permits" aria-pressed="false"
+                aria-expanded="false" aria-controls="drawer">i</button>
       </div>
       <div class="sub">872 Gwinnett bus stops. Most have nowhere to sit.<br>Color = who we have to ask.</div>
     </div>
@@ -170,13 +210,14 @@ input[type=search]:focus-visible{outline:2px solid var(--hi);outline-offset:1px}
         <button class="f on" id="cityf">city limits</button>
         <button class="f" id="resetf">reset</button>
       </div>
+      <label class="lab" for="q">Search <span class="vh">by stop, road, or city</span></label>
       <input type="search" id="q" placeholder="stop, road, or city">
-      <div class="count" id="count"></div>
+      <div class="count" id="count" role="status" aria-live="polite"></div>
     </div>
-    <div class="list" id="list"></div>
+    <ul class="list" id="list"></ul>
 
-    <div class="drawer" id="drawer">
-      <div class="dhead"><h2>Sources and permits</h2>
+    <div class="drawer" id="drawer" role="dialog" aria-labelledby="drawerTitle">
+      <div class="dhead"><h2 id="drawerTitle">Sources and permits</h2>
         <button class="f" id="closeInfo">close</button></div>
       <div class="dbody">
         <div class="dsec">Who has to permit a bench</div>
@@ -250,12 +291,21 @@ const D=[{"i":1000,"n":"Sugarloaf Mills P&R Local","c":"UNINCORPORATED","j":"UNK
 const ICON_MOON='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.2 10.4A6.1 6.1 0 0 1 5.6 2.8a6.2 6.2 0 1 0 7.6 7.6z" fill="currentColor"/></svg>';
 const ICON_SUN='<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.1" fill="currentColor"/><g stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M8 1.3v2M8 12.7v2M1.3 8h2M12.7 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4"/></g></svg>';
 const ARW='<svg class="arw" viewBox="0 0 10 10" aria-hidden="true"><path d="M2.6 7.4 7.4 2.6M3.6 2.6h3.8v3.8" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const MODES={
-  day:{tile:'voyager',boundary:'#AF2B23',cityline:'#A99C86',
-    col:{EASIEST:'#AF2B23',MEDIUM:'#2F6690',HARD:'#1B1B1B',OUT:'#A99C86',UNKNOWN:'#6E6154'}},
-  night:{tile:'dark_matter',boundary:'#E8443A',cityline:'#6E6252',
-    col:{EASIEST:'#E8443A',MEDIUM:'#5AA9E6',HARD:'#EFE7D3',OUT:'#9A8B74',UNKNOWN:'#B0A08C'}}
-};
+/* Only the tile name lives here. Every colour is read from the CSS custom properties so
+   the stylesheet is the single source of truth: the legend, the map dots, the filter
+   swatches and the drawer dots cannot drift apart from each other. */
+const MODES={day:{tile:'voyager'},night:{tile:'dark_matter'}};
+function tok(n){return getComputedStyle(document.body).getPropertyValue(n).trim();}
+/* These strings must match the `j` values in D exactly. They are the census's own
+   permit_difficulty values, uppercased. Declared once: a filter set that said 'OUT'
+   while the data said 'OUT OF SCOPE' silently hid the 14 DeKalb stops and left the
+   "out" chip inert. */
+const J_OUT='OUT OF SCOPE';
+const JKEYS=['EASIEST','MEDIUM','HARD',J_OUT,'UNKNOWN'];
+function cols(){const c={};c.EASIEST=tok('--county');c.MEDIUM=tok('--city');c.HARD=tok('--gdot');
+  c[J_OUT]=tok('--out');c.UNKNOWN=tok('--unk');return c;}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 let MODE=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'night':'day';
 const TMIN=Math.min.apply(null,D.map(function(d){return d.t;}));
 const TMAX=Math.max.apply(null,D.map(function(d){return d.t;}));
@@ -268,7 +318,7 @@ else{ document.getElementById('map').style.display='none';
   document.getElementById('legend').style.display='none';
   document.getElementById('mapfail').style.display='flex'; }
 
-let state={j:new Set(['EASIEST','MEDIUM','HARD','OUT','UNKNOWN']),sw:false,q:'',
+let state={j:new Set(JKEYS),sw:false,q:'',
   tA:TMIN,tB:TMAX,sA:SMIN,sB:SMAX};
 
 function paintMap(){
@@ -278,21 +328,22 @@ function paintMap(){
   tiles=L.tileLayer('https://{s}.basemaps.cartocdn.com/'+m.tile+'/{z}/{x}/{y}{r}.png',
     {maxZoom:19,subdomains:'abcd',attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
   tiles.bringToBack();
+  const cityline=tok('--cityline');
   const wasOn=document.getElementById('cityf').classList.contains('on');
   cityLayer.clearLayers();
-  L.geoJSON(CITIES,{style:{color:m.cityline,weight:1,dashArray:'2,3',fill:true,fillColor:m.cityline,fillOpacity:0.05}})
+  L.geoJSON(CITIES,{style:{color:cityline,weight:1,dashArray:'2,3',fill:true,fillColor:cityline,fillOpacity:0.05}})
     .bindTooltip(function(l){return l.feature.properties.n;},{sticky:true,className:'citytip'}).addTo(cityLayer);
   if(wasOn)cityLayer.addTo(map);
   if(countyLayer)map.removeLayer(countyLayer);
-  countyLayer=L.geoJSON(COUNTY,{style:{color:m.boundary,weight:2.5,fill:false,interactive:false}}).addTo(map);
+  countyLayer=L.geoJSON(COUNTY,{style:{color:tok('--boundary'),weight:2.5,fill:false,interactive:false}}).addTo(map);
 }
 function paintLegend(){
-  const c=MODES[MODE].col;
+  const c=cols();
   document.getElementById('legend').innerHTML=
     '<div><i style="background:'+c.EASIEST+'"></i>County ROW (easiest)</div>'+
     '<div><i style="background:'+c.MEDIUM+'"></i>City ROW</div>'+
     '<div><i style="background:'+c.HARD+'"></i>GDOT state route (hard)</div>'+
-    '<div><i style="background:'+c.OUT+'"></i>DeKalb or private</div>'+
+    '<div><i style="background:'+c[J_OUT]+'"></i>DeKalb or private</div>'+
     '<div style="opacity:.7;margin-top:3px">size = trips per weekday</div>';
   document.querySelectorAll('#jf button .sw').forEach(function(s){s.style.background=c[s.dataset.k];});
 }
@@ -310,6 +361,7 @@ const drawer=document.getElementById('drawer'),infoBtn=document.getElementById('
 function setInfo(open){
   drawer.classList.toggle('open',open);
   infoBtn.setAttribute('aria-pressed',open?'true':'false');
+  infoBtn.setAttribute('aria-expanded',open?'true':'false');
   if(open)document.getElementById('closeInfo').focus();else infoBtn.focus();
 }
 infoBtn.onclick=function(){setInfo(!drawer.classList.contains('open'));};
@@ -341,43 +393,73 @@ const spdUI=dual('spdA','spdB','spdFill','spdLab',SMIN,SMAX,5,
 function spdOf(d){return d.sp>0?d.sp:SMIN;}
 
 const jf=document.getElementById('jf');
-[['EASIEST','county'],['MEDIUM','city'],['HARD','GDOT'],['OUT','out'],['UNKNOWN','?']].forEach(function(p){
+[['EASIEST','county'],['MEDIUM','city'],['HARD','GDOT'],[J_OUT,'out'],['UNKNOWN','?']].forEach(function(p){
   const k=p[0];
-  const b=document.createElement('button');b.className='f on';
-  b.innerHTML='<span class="sw" data-k="'+k+'"></span>'+p[1];
-  b.onclick=function(){state.j.has(k)?state.j.delete(k):state.j.add(k);b.classList.toggle('on');draw();};
+  const b=document.createElement('button');b.className='f on';b.type='button';
+  b.setAttribute('aria-pressed','true');
+  const sw=document.createElement('span');sw.className='sw';sw.dataset.k=k;
+  b.appendChild(sw);b.appendChild(document.createTextNode(p[1]));
+  b.onclick=function(){state.j.has(k)?state.j.delete(k):state.j.add(k);
+    b.classList.toggle('on');b.setAttribute('aria-pressed',b.classList.contains('on')?'true':'false');draw();};
   jf.appendChild(b);
 });
 const swb=document.getElementById('swf'),cyb=document.getElementById('cityf'),rst=document.getElementById('resetf');
-swb.onclick=function(){state.sw=!state.sw;swb.classList.toggle('on');draw();};
-cyb.onclick=function(){cyb.classList.toggle('on');if(!HASMAP)return;
+swb.setAttribute('aria-pressed','false');cyb.setAttribute('aria-pressed','true');
+swb.onclick=function(){state.sw=!state.sw;swb.classList.toggle('on');
+  swb.setAttribute('aria-pressed',state.sw?'true':'false');draw();};
+cyb.onclick=function(){cyb.classList.toggle('on');
+  cyb.setAttribute('aria-pressed',cyb.classList.contains('on')?'true':'false');
+  if(!HASMAP)return;
   cyb.classList.contains('on')?cityLayer.addTo(map):map.removeLayer(cityLayer);};
 rst.onclick=function(){
   state.tA=TMIN;state.tB=TMAX;state.sA=SMIN;state.sB=SMAX;state.sw=false;state.q='';
   tripsUI.set(TMIN,TMAX);spdUI.set(SMIN,SMAX);
-  swb.classList.remove('on');document.getElementById('q').value='';
-  state.j=new Set(['EASIEST','MEDIUM','HARD','OUT','UNKNOWN']);
-  document.querySelectorAll('#jf button').forEach(function(b){b.classList.add('on');});
+  swb.classList.remove('on');swb.setAttribute('aria-pressed','false');
+  clearTimeout(qt);document.getElementById('q').value='';
+  state.j=new Set(JKEYS);
+  document.querySelectorAll('#jf button').forEach(function(b){b.classList.add('on');b.setAttribute('aria-pressed','true');});
   draw();
 };
-document.getElementById('q').oninput=function(e){state.q=e.target.value.toLowerCase();draw();};
+/* Typing rebuilds every marker, so wait for a pause rather than redrawing per keystroke. */
+let qt;
+document.getElementById('q').oninput=function(e){
+  const v=e.target.value.toLowerCase();
+  clearTimeout(qt);qt=setTimeout(function(){state.q=v;draw();},120);
+};
 
 function match(d){const s=spdOf(d);
   return state.j.has(d.j)&&(!state.sw||d.sw)&&d.t>=state.tA&&d.t<=state.tB&&s>=state.sA&&s<=state.sB&&
     (!state.q||(d.n+' '+d.r+' '+d.c+' '+d.ro).toLowerCase().indexOf(state.q)>-1);}
 function sv(d){return 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint='+d.la+','+d.lo;}
 
+/* Selection only moves a class and the map view. It used to call draw(), which rebuilt
+   every marker and every card to highlight one row. */
+function select(id){
+  const prev=document.querySelector('#list .card.sel');
+  if(prev)prev.classList.remove('sel');
+  sel=id;
+  const now=document.querySelector('#list .card[data-id="'+id+'"]');
+  if(now)now.classList.add('sel');
+  const d=D.filter(function(x){return x.i===id;})[0];
+  if(HASMAP&&d){map.setView([d.la,d.lo],17);if(markers[id])markers[id].openPopup();}
+}
+document.getElementById('list').addEventListener('click',function(e){
+  if(e.target.closest('a'))return;
+  const li=e.target.closest('.card[data-id]');
+  if(li)select(+li.dataset.id);
+});
+
 function draw(){
-  const COL=MODES[MODE].col;
+  const COL=cols();
   const f=D.filter(match).sort(function(a,b){return b.p-a.p||b.t-a.t;});
   if(HASMAP){
     layer.clearLayers();markers={};
     f.forEach(function(d){
       const m=L.circleMarker([d.la,d.lo],{radius:3+Math.sqrt(d.t)*0.55,color:COL[d.j],weight:1,
         fillColor:COL[d.j],fillOpacity:d.sw?0.7:0.12});
-      m.bindPopup('<b>'+d.n+'</b><br>'+d.i+' \u00b7 rt '+d.ro+'<br>'+d.r+
-        (d.sr?' (SR '+d.sr+')':'')+(d.sp?' \u00b7 '+d.sp+' mph':'')+
-        '<br><span style="color:'+COL[d.j]+';font-weight:700">'+d.jf+'</span><br>'+d.t+
+      m.bindPopup('<b>'+esc(d.n)+'</b><br>'+d.i+' \u00b7 rt '+esc(d.ro)+'<br>'+esc(d.r)+
+        (d.sr?' (SR '+esc(d.sr)+')':'')+(d.sp?' \u00b7 '+d.sp+' mph':'')+
+        '<br><span style="font-weight:700">'+esc(d.jf)+'</span><br>'+d.t+
         ' trips/weekday \u00b7 sidewalk: '+(d.sw?'yes':'NO')+
         '<br><a href="'+sv(d)+'" target="_blank" rel="noopener">Street View '+ARW+'</a>');
       m.addTo(layer);markers[d.i]=m;
@@ -385,24 +467,28 @@ function draw(){
     layer.addTo(map);
   }
   document.getElementById('count').textContent=f.length+' of '+D.length+' stops';
-  const el=document.getElementById('list');el.innerHTML='';
-  f.slice(0,300).forEach(function(d){
-    const c=document.createElement('div');c.className='card'+(sel===d.i?' sel':'');
-    c.innerHTML='<h3>'+d.n+'</h3><div class="tags">'+
-      '<span class="tag" style="color:'+COL[d.j]+'">'+d.jf+'</span>'+
-      '<span class="tag n">'+d.t+' trips/wkdy</span>'+
-      '<span class="tag n">'+(d.sw?'sidewalk':'NO SIDEWALK')+'</span>'+
-      '<span class="tag n">rt '+d.ro+'</span>'+
-      (d.sp?'<span class="tag n">'+d.sp+' mph</span>':'')+
-      '</div><div class="meta"><a href="'+sv(d)+'" target="_blank" rel="noopener">Street View '+ARW+'</a>'+
-      '<span>'+d.c.toLowerCase()+' \u00b7 '+d.r.toLowerCase()+'</span></div>';
-    c.onclick=function(){sel=d.i;
-      if(HASMAP){map.setView([d.la,d.lo],17);if(markers[d.i])markers[d.i].openPopup();}
-      draw();};
-    el.appendChild(c);
-  });
-  if(f.length>300){const n=document.createElement('div');n.className='card';n.style.opacity='.6';n.style.cursor='default';
-    n.innerHTML='<h3>+'+(f.length-300)+' more. Narrow the filters.</h3>';el.appendChild(n);}
+  const el=document.getElementById('list');
+  if(!f.length){
+    el.innerHTML='<li class="card empty"><h3>No stops match these filters.</h3>'+
+      '<div class="meta"><span>Widen a range, or use reset to clear everything.</span></div></li>';
+    return;
+  }
+  /* Every matching stop renders. The list is the map's non-visual equivalent, so a cap
+     here would put stops on the map that a keyboard or screen reader user cannot reach. */
+  el.innerHTML=f.map(function(d){
+    return '<li class="card'+(sel===d.i?' sel':'')+'" data-id="'+d.i+'">'+
+      '<h3><button type="button" class="pick">'+esc(d.n)+'</button></h3>'+
+      '<div class="tags">'+
+        '<span class="tag"><i class="tsw" style="background:'+COL[d.j]+'"></i>'+esc(d.jf)+'</span>'+
+        '<span class="tag n">'+d.t+' trips/wkdy</span>'+
+        '<span class="tag n">'+(d.sw?'sidewalk':'NO SIDEWALK')+'</span>'+
+        '<span class="tag n">rt '+esc(d.ro)+'</span>'+
+        (d.sp?'<span class="tag n">'+d.sp+' mph</span>':'')+
+      '</div><div class="meta">'+
+        '<a href="'+sv(d)+'" target="_blank" rel="noopener" aria-label="Street View of '+esc(d.n)+'">Street View '+ARW+'</a>'+
+        '<span>'+esc(d.c.toLowerCase())+' \u00b7 '+esc(d.r.toLowerCase())+'</span>'+
+      '</div></li>';
+  }).join('');
 }
 if(HASMAP){cityLayer.addTo(map);}
 setMode(MODE);
