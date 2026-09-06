@@ -16,6 +16,12 @@ data/
   gwinnett_bus_stop_census.csv  all 872 stops, 18 columns
 ```
 
+The interface is [Material Design 3](https://m3.material.io/), hand written as CSS
+custom properties (`--md-sys-color-*`, the M3 shape, elevation and type scales) on
+Google's own M3 blue baseline scheme. No component library and still no build step.
+Roboto comes from Google Fonts; the icons are Material Symbols, inlined as SVG paths
+so the icon set has no network dependency.
+
 ## Where the data came from
 
 Everything is public. Nothing here is scraped, licensed, or private.
